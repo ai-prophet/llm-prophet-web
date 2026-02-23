@@ -16,35 +16,49 @@ This guide walks you through deploying the **backend** (FastAPI) and **frontend*
 
 ## Part 1: Deploy the Backend (Render)
 
-### 1.1 Push your code to GitHub
+### 1.1 Add mini-llm-prophet (required for Render)
+
+Your backend depends on `mini-llm-prophet`. Add it as a **git submodule** so Render can clone it during build:
+
+```bash
+cd /path/to/prophet-agent/app    # your repo root (contains backend/, frontend/)
+git submodule add https://github.com/ai-prophet/mini-llm-prophet mini-llm-prophet
+git add .gitmodules mini-llm-prophet
+git commit -m "Add mini-llm-prophet as submodule"
+```
+
+This creates `app/mini-llm-prophet/` inside your repo. The submodule will be cloned when Render runs `git submodule update --init --recursive` during the build (see step 1.2).
+
+> **Alternative:** If your repo root is `prophet-agent` and contains both `app/` and `mini-llm-prophet/` as siblings, use Root Directory `app/backend` and Build Command `pip install -r requirements.txt && pip install -e ../../mini-llm-prophet` (no submodule init needed).
+
+### 1.2 Push your code to GitHub
 
 If not already done:
 
 ```bash
-cd /path/to/prophet-agent
-git init
+cd /path/to/prophet-agent/app
 git add .
 git commit -m "Initial commit"
 git remote add origin https://github.com/YOUR_USERNAME/prophet-agent.git
 git push -u origin main
 ```
 
-> **Important:** The repo must contain both `app/backend/` and `mini-llm-prophet/` at the root. If `mini-llm-prophet` is a separate repo, either copy it into this repo or use a [git submodule](https://git-scm.com/book/en/v2/Git-Tools-Submodules).
+> **If you used a submodule:** Push with `git push --recurse-submodules=on-demand` so the submodule reference is pushed too.
 
-### 1.2 Create a Web Service on Render
+### 1.3 Create a Web Service on Render
 
 1. Go to [Render Dashboard](https://dashboard.render.com/) → **New** → **Web Service**.
 2. Connect your GitHub account if prompted.
-3. Select the `prophet-agent` repository.
+3. Select the `prophet-agent` repository (or whatever your repo is named).
 4. Configure:
 
    | Setting | Value |
    |---------|-------|
    | **Name** | `prophet-backend` (or any name) |
    | **Region** | Choose closest to your users |
-   | **Root Directory** | `app/backend` |
+   | **Root Directory** | `backend` |
    | **Runtime** | Python 3 |
-   | **Build Command** | `pip install -r requirements.txt && pip install -e ../../mini-llm-prophet` |
+   | **Build Command** | `cd .. && git submodule update --init --recursive && cd backend && pip install -r requirements.txt && pip install -e ../mini-llm-prophet` |
    | **Start Command** | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
 
 5. Under **Advanced** → **Environment Variables**, add:
@@ -80,7 +94,7 @@ Test it: open `https://prophet-backend-xxxx.onrender.com/api/health` in a browse
    | Setting | Value |
    |---------|-------|
    | **Framework Preset** | Next.js (auto-detected) |
-   | **Root Directory** | `app/frontend` |
+   | **Root Directory** | `frontend` |
    | **Build Command** | `npm run build` (default) |
    | **Output Directory** | `.next` (default) |
 
