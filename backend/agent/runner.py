@@ -9,7 +9,7 @@ import uuid
 from pathlib import Path
 from queue import Queue
 
-from config import AGENT_DEFAULTS, ENVIRONMENT_DEFAULTS, UserSettings
+from config import AGENT_DEFAULTS, ENVIRONMENT_DEFAULTS, UserSettings, resolve_user_settings
 
 logger = logging.getLogger("prophet_web.runner")
 
@@ -33,6 +33,8 @@ def start_run(
     settings: UserSettings,
 ) -> tuple[str, Queue]:
     """Start an agent run in a background thread. Returns (run_id, event_queue)."""
+    settings = resolve_user_settings(settings)
+
     from miniprophet.agent.context import SlidingWindowContextManager
     from miniprophet.environment.forecast_env import ForecastEnvironment, create_default_tools
     from miniprophet.environment.source_board import SourceBoard

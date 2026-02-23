@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
 
 from agent.runner import get_run_queue, start_run
-from config import UserSettings
+from config import InvalidAdminAPIKey, UserSettings
 from services.planner import generate_forecast_plan
 
 router = APIRouter(prefix="/api")
@@ -29,16 +29,22 @@ class RunRequest(BaseModel):
 
 @router.post("/plan")
 async def plan(req: PlanRequest):
-    result = generate_forecast_plan(req.prompt, req.settings)
-    return result
+    try:
+        result = generate_forecast_plan(req.prompt, req.settings)
+        return result
+    except InvalidAdminAPIKey as exc:
+        raise HTTPException(401, str(exc)) from exc
 
 
 @router.post("/run")
 async def run(req: RunRequest):
     if len(req.outcomes) < 2:
         raise HTTPException(400, "At least 2 outcomes are required.")
-    run_id, _ = start_run(req.title, req.outcomes, req.settings)
-    return {"run_id": run_id}
+    try:
+        run_id, _ = start_run(req.title, req.outcomes, req.settings)
+        return {"run_id": run_id}
+    except InvalidAdminAPIKey as exc:
+        raise HTTPException(401, str(exc)) from exc
 
 
 @router.get("/run/{run_id}/stream")

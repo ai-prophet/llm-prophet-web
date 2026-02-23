@@ -17,6 +17,15 @@ function nextId(): string {
   return `msg_${++msgCounter}_${Date.now()}`;
 }
 
+function getApiErrorMessage(payload: unknown): string {
+  if (payload && typeof payload === "object") {
+    const rec = payload as Record<string, unknown>;
+    if (typeof rec.detail === "string") return rec.detail;
+    if (typeof rec.message === "string") return rec.message;
+  }
+  return "Request failed.";
+}
+
 function normalizeSourceId(sourceId: string): string {
   return sourceId.trim().toUpperCase();
 }
@@ -62,6 +71,16 @@ export default function useAgentStream() {
           body: JSON.stringify({ prompt, settings }),
         });
         const data = await res.json();
+        if (!res.ok) {
+          addMessage({
+            id: nextId(),
+            type: "error",
+            content: getApiErrorMessage(data),
+            timestamp: Date.now(),
+            isError: true,
+          });
+          return;
+        }
 
         if (data.status === "success" && data.title && data.outcomes) {
           addMessage({
@@ -251,7 +270,14 @@ export default function useAgentStream() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title, outcomes, settings }),
         });
-        const { run_id } = await res.json();
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(getApiErrorMessage(data));
+        }
+        const run_id = data.run_id as string;
+        if (!run_id) {
+          throw new Error("Missing run_id from backend.");
+        }
 
         const eventSource = new EventSource(
           `${API_BASE}/api/run/${run_id}/stream`

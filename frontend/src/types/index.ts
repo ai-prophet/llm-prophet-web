@@ -127,6 +127,7 @@ export interface UserSettings {
   model_class: "litellm" | "openrouter";
   model_name: string;
   search_backend: "perplexity" | "brave";
+  admin_api_key: string;
   openrouter_api_key: string;
   perplexity_api_key: string;
   brave_api_key: string;
@@ -136,6 +137,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   model_class: "openrouter",
   model_name: "google/gemini-2.5-flash-preview-05-20",
   search_backend: "perplexity",
+  admin_api_key: "",
   openrouter_api_key: "",
   perplexity_api_key: "",
   brave_api_key: "",

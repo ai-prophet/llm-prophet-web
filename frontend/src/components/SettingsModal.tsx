@@ -69,6 +69,24 @@ export default function SettingsModal({
         <div className="space-y-5">
           <div className="border-b border-gray-100 pb-4">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+              Access
+            </p>
+            <Field
+              label="Admin API key"
+              hint="Optional. If valid, backend defaults (OpenRouter + Perplexity) can be used without entering personal keys."
+            >
+              <input
+                type="password"
+                value={draft.admin_api_key}
+                onChange={(e) => set("admin_api_key", e.target.value)}
+                className={INPUT_CLS}
+                placeholder="insert-your-admin-api-key"
+              />
+            </Field>
+          </div>
+
+          <div className="border-b border-gray-100 pb-4">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
               Model
             </p>
             <div className="space-y-3">
@@ -101,14 +119,14 @@ export default function SettingsModal({
 
               <Field
                 label="Model name"
-                hint="e.g. google/gemini-2.5-flash-preview-05-20, openai/gpt-4o, anthropic/claude-sonnet-4-20250514"
+                hint="e.g. google/gemini-3-flash-preview, openai/gpt-4o, anthropic/claude-sonnet-4-20250514"
               >
                 <input
                   type="text"
                   value={draft.model_name}
                   onChange={(e) => set("model_name", e.target.value)}
                   className={INPUT_CLS}
-                  placeholder="google/gemini-2.5-flash-preview-05-20"
+                  placeholder="google/gemini-3-flash-preview"
                 />
               </Field>
 

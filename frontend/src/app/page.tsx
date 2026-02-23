@@ -136,6 +136,7 @@ export default function Home() {
   }, [updateSidebarWidth]);
 
   const hasRequiredKeys = (() => {
+    if (settings.admin_api_key.trim()) return true;
     if (settings.model_class === "openrouter" && !settings.openrouter_api_key)
       return false;
     if (settings.search_backend === "perplexity" && !settings.perplexity_api_key)

@@ -3,3 +3,4 @@ uvicorn[standard]
 sse-starlette
 pydantic>=2.0
 litellm
+python-dotenv
