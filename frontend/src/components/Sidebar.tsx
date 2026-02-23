@@ -11,6 +11,7 @@ interface SidebarProps {
   activeTab: "board" | "searches";
   onTabChange: (tab: "board" | "searches") => void;
   highlightStep: number | null;
+  highlightBoardId: number | null;
 }
 
 export default function Sidebar({
@@ -19,6 +20,7 @@ export default function Sidebar({
   activeTab,
   onTabChange,
   highlightStep,
+  highlightBoardId,
 }: SidebarProps) {
   return (
     <div className="h-full flex flex-col bg-white/60 backdrop-blur-sm">
@@ -58,7 +60,10 @@ export default function Sidebar({
       </div>
       <div className="flex-1 overflow-y-auto custom-scrollbar">
         {activeTab === "board" ? (
-          <SourceBoardPanel entries={boardEntries} />
+          <SourceBoardPanel
+            entries={boardEntries}
+            highlightBoardId={highlightBoardId}
+          />
         ) : (
           <SearchesPanel groups={searchGroups} highlightStep={highlightStep} />
         )}

@@ -22,9 +22,10 @@ function SearchGroupCard({
   useEffect(() => {
     if (highlighted && ref.current) {
       ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      setExpanded(true);
     }
   }, [highlighted]);
+
+  const isExpanded = expanded || highlighted;
 
   return (
     <div
@@ -54,7 +55,7 @@ function SearchGroupCard({
         <svg
           className={cn(
             "w-4 h-4 text-gray-400 transition-transform flex-shrink-0",
-            expanded && "rotate-180"
+            isExpanded && "rotate-180"
           )}
           fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
         >
@@ -62,7 +63,7 @@ function SearchGroupCard({
         </svg>
       </div>
 
-      {expanded && group.results.length > 0 && (
+      {isExpanded && group.results.length > 0 && (
         <div className="mt-3 space-y-2 border-t border-gray-100 pt-2">
           {group.results.map((r) => (
             <div key={r.id} className="text-xs">

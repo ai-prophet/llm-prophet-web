@@ -26,7 +26,7 @@ export default function ForecastModal(props: ForecastModalProps) {
     const { submission } = props;
     const sorted = Object.entries(submission).sort(([, a], [, b]) => b - a);
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -75,19 +75,19 @@ function EditModal({
 }: EditProps) {
   const [title, setTitle] = useState(initialTitle);
   const [outcomes, setOutcomes] = useState(initialOutcomes.join(", "));
+  const parsedOutcomes = outcomes
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
 
   const handleSave = () => {
-    const parsed = outcomes
-      .split(",")
-      .map((o) => o.trim())
-      .filter(Boolean);
-    if (title.trim() && parsed.length >= 2) {
-      onSave(title.trim(), parsed);
+    if (title.trim() && parsedOutcomes.length >= 2) {
+      onSave(title.trim(), parsedOutcomes);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-[1px]">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -117,6 +117,19 @@ function EditModal({
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none resize-none"
             />
+            {parsedOutcomes.length > 0 && (
+              <div className="mt-3 flex items-center gap-2 flex-wrap">
+                <span className="text-xs text-gray-500">Outcomes:</span>
+                {parsedOutcomes.map((outcome, index) => (
+                  <span
+                    key={`${outcome}-${index}`}
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                  >
+                    {outcome}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <div className="flex gap-2 mt-5">

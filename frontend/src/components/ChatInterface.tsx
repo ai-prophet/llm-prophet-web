@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import useAgentStream from "@/hooks/useAgentStream";
 import type { SearchGroup, BoardEntry, UserSettings } from "@/types";
@@ -15,8 +15,12 @@ interface ChatInterfaceProps {
   onSearchResult: (group: SearchGroup) => void;
   onBoardUpdate: (entries: BoardEntry[]) => void;
   onStepClick: (stepNumber: number) => void;
+  onOpenSourceBoardEntry: (boardId: number) => void;
+  onRunStart: () => void;
   onOpenSettings: () => void;
+  onToggleSettings: () => void;
   hasRequiredKeys: boolean;
+  settingsOpen: boolean;
 }
 
 export default function ChatInterface({
@@ -24,8 +28,12 @@ export default function ChatInterface({
   onSearchResult,
   onBoardUpdate,
   onStepClick,
+  onOpenSourceBoardEntry,
+  onRunStart,
   onOpenSettings,
+  onToggleSettings,
   hasRequiredKeys,
+  settingsOpen,
 }: ChatInterfaceProps) {
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -66,13 +74,42 @@ export default function ChatInterface({
       onOpenSettings();
       return;
     }
+    onRunStart();
     startRun(title, outcomes, settings);
   };
 
   const inputDisabled = isPlanning || isRunning;
+  const hasForecastPlans = messages.some((msg) => msg.type === "plan");
+
+  const openLatestForecastEdit = useCallback(() => {
+    const buttons = document.querySelectorAll<HTMLButtonElement>(
+      "[data-forecast-edit='true']"
+    );
+    buttons[buttons.length - 1]?.click();
+  }, []);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!event.ctrlKey && !event.metaKey) return;
+      const key = event.key.toLowerCase();
+
+      if (key === "k") {
+        event.preventDefault();
+        onToggleSettings();
+      } else if (key === "o" && hasForecastPlans) {
+        event.preventDefault();
+        openLatestForecastEdit();
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [hasForecastPlans, onToggleSettings, openLatestForecastEdit]);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col relative">
       <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-6 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center">
@@ -121,6 +158,7 @@ export default function ChatInterface({
                   key={msg.id}
                   message={msg}
                   onStepClick={onStepClick}
+                  onAddSourceClick={onOpenSourceBoardEntry}
                 />
               );
             case "think":
@@ -197,6 +235,16 @@ export default function ChatInterface({
             Send
           </button>
         </form>
+      </div>
+
+      <div className="absolute bottom-24 right-5 border border-gray-300 bg-white/80 backdrop-blur-sm px-3 py-2 text-xs text-gray-600 space-y-1 pointer-events-none">
+        <p>
+          <span className="font-mono text-gray-900">Ctrl+K</span> Toggle Settings
+          ({settingsOpen ? "Open" : "Closed"})
+        </p>
+        <p className={hasForecastPlans ? "text-gray-600" : "text-gray-400"}>
+          <span className="font-mono text-gray-900">Ctrl+O</span> Open latest forecast editor
+        </p>
       </div>
     </div>
   );

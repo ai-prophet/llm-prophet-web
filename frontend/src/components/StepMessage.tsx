@@ -7,6 +7,7 @@ import type { ChatMessage } from "@/types";
 interface StepMessageProps {
   message: ChatMessage;
   onStepClick?: (stepNumber: number) => void;
+  onAddSourceClick?: (boardId: number) => void;
 }
 
 function ExpandIcon({ expanded }: { expanded: boolean }) {
@@ -71,15 +72,41 @@ function SearchStep({ message, onStepClick }: StepMessageProps) {
   );
 }
 
-function AddSourceStep({ message }: { message: ChatMessage }) {
+function AddSourceStep({
+  message,
+  onAddSourceClick,
+}: {
+  message: ChatMessage;
+  onAddSourceClick?: (boardId: number) => void;
+}) {
   const data = message.addSourceData;
+  const parsedIdMatch = (data?.sourceId || "").match(/\d+/);
+  const parsedId = parsedIdMatch
+    ? Number.parseInt(parsedIdMatch[0], 10)
+    : Number.NaN;
+  const targetBoardId =
+    data?.boardId && data.boardId > 0
+      ? data.boardId
+      : Number.isFinite(parsedId) && parsedId > 0
+        ? parsedId
+        : null;
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm">
+    <div
+      className={`bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm ${targetBoardId ? "cursor-pointer hover:border-gray-300 transition-colors" : ""}`}
+      onClick={() => {
+        if (targetBoardId) onAddSourceClick?.(targetBoardId);
+      }}
+    >
       <p className="text-sm text-gray-900">
         <span className="text-gray-400 font-mono text-xs mr-2">add_source</span>
         Add source {data?.sourceId} to the source board
       </p>
-      <p className="text-xs text-gray-400 mt-0.5">Source added to board</p>
+      <p className="text-xs text-gray-400 mt-0.5">
+        {targetBoardId
+          ? `Click to open source board entry #${targetBoardId}`
+          : "Source added to board"}
+      </p>
     </div>
   );
 }
@@ -121,13 +148,19 @@ function ThinkStep({ message }: { message: ChatMessage }) {
   );
 }
 
-export default function StepMessage({ message, onStepClick }: StepMessageProps) {
+export default function StepMessage({
+  message,
+  onStepClick,
+  onAddSourceClick,
+}: StepMessageProps) {
   const inner = (() => {
     switch (message.toolName) {
       case "search":
         return <SearchStep message={message} onStepClick={onStepClick} />;
       case "add_source":
-        return <AddSourceStep message={message} />;
+        return (
+          <AddSourceStep message={message} onAddSourceClick={onAddSourceClick} />
+        );
       case "edit_note":
         return <EditNoteStep message={message} />;
       default:

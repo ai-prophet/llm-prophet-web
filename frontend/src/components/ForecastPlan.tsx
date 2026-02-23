@@ -70,6 +70,7 @@ export default function ForecastPlan({
               <button
                 onClick={() => setEditOpen(true)}
                 disabled={disabled}
+                data-forecast-edit="true"
                 className="px-4 py-1.5 text-sm font-medium rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-40"
               >
                 Edit

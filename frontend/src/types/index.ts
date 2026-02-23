@@ -89,6 +89,7 @@ export interface StepSearchData {
 export interface StepAddSourceData {
   sourceId: string;
   note: string;
+  boardId?: number;
 }
 
 export interface StepEditNoteData {
@@ -132,7 +133,7 @@ export interface UserSettings {
 }
 
 export const DEFAULT_SETTINGS: UserSettings = {
-  model_class: "litellm",
+  model_class: "openrouter",
   model_name: "google/gemini-2.5-flash-preview-05-20",
   search_backend: "perplexity",
   openrouter_api_key: "",

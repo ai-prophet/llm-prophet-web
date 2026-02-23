@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ChatInterface from "@/components/ChatInterface";
 import Sidebar from "@/components/Sidebar";
 import SettingsModal from "@/components/SettingsModal";
@@ -8,6 +8,10 @@ import type { SearchGroup, BoardEntry, UserSettings } from "@/types";
 import { DEFAULT_SETTINGS } from "@/types";
 
 const SETTINGS_KEY = "prophet_settings";
+const DEFAULT_SIDEBAR_WIDTH = 380;
+const MIN_SIDEBAR_WIDTH = 320;
+const MAX_SIDEBAR_WIDTH = 720;
+const MIN_MAIN_WIDTH = 520;
 
 function loadSettings(): UserSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
@@ -29,10 +33,16 @@ export default function Home() {
   const [boardEntries, setBoardEntries] = useState<BoardEntry[]>([]);
   const [activeTab, setActiveTab] = useState<"board" | "searches">("board");
   const [highlightStep, setHighlightStep] = useState<number | null>(null);
+  const [highlightBoardId, setHighlightBoardId] = useState<number | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
+  const [sidebarWidth, setSidebarWidth] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const layoutRef = useRef<HTMLDivElement>(null);
+  const resizingRef = useRef(false);
 
   useEffect(() => {
+    // Local settings are loaded after mount to avoid SSR/localStorage mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettings(loadSettings());
   }, []);
 
@@ -54,8 +64,76 @@ export default function Home() {
 
   const handleStepClick = useCallback((stepNumber: number) => {
     setActiveTab("searches");
+    setHighlightBoardId(null);
     setHighlightStep(stepNumber);
   }, []);
+
+  const handleOpenSourceBoardEntry = useCallback((boardId: number) => {
+    setActiveTab("board");
+    setHighlightStep(null);
+    setHighlightBoardId(boardId);
+  }, []);
+
+  const handleRunStart = useCallback(() => {
+    setSearchGroups([]);
+    setBoardEntries([]);
+    setHighlightStep(null);
+    setHighlightBoardId(null);
+    setActiveTab("board");
+  }, []);
+
+  const handleToggleSettings = useCallback(() => {
+    setSettingsOpen((prev) => !prev);
+  }, []);
+
+  const handleTabChange = useCallback((tab: "board" | "searches") => {
+    setActiveTab(tab);
+    if (tab === "board") {
+      setHighlightStep(null);
+    } else {
+      setHighlightBoardId(null);
+    }
+  }, []);
+
+  const updateSidebarWidth = useCallback((clientX: number) => {
+    const layout = layoutRef.current;
+    if (!layout) return;
+
+    const rect = layout.getBoundingClientRect();
+    const maxAllowed = Math.min(MAX_SIDEBAR_WIDTH, rect.width - MIN_MAIN_WIDTH);
+    const minAllowed = Math.min(MIN_SIDEBAR_WIDTH, maxAllowed);
+    const nextWidth = rect.right - clientX;
+    const clamped = Math.max(minAllowed, Math.min(maxAllowed, nextWidth));
+    setSidebarWidth(clamped);
+  }, []);
+
+  const handleResizeStart = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    resizingRef.current = true;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+  }, []);
+
+  useEffect(() => {
+    const onMouseMove = (event: MouseEvent) => {
+      if (!resizingRef.current) return;
+      updateSidebarWidth(event.clientX);
+    };
+
+    const onMouseUp = () => {
+      if (!resizingRef.current) return;
+      resizingRef.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [updateSidebarWidth]);
 
   const hasRequiredKeys = (() => {
     if (settings.model_class === "openrouter" && !settings.openrouter_api_key)
@@ -96,24 +174,39 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div ref={layoutRef} className="flex-1 flex overflow-hidden min-h-0">
         <div className="flex-1 min-w-0">
           <ChatInterface
             settings={settings}
             onSearchResult={handleSearchResult}
             onBoardUpdate={handleBoardUpdate}
             onStepClick={handleStepClick}
+            onOpenSourceBoardEntry={handleOpenSourceBoardEntry}
+            onRunStart={handleRunStart}
             onOpenSettings={() => setSettingsOpen(true)}
+            onToggleSettings={handleToggleSettings}
             hasRequiredKeys={hasRequiredKeys}
+            settingsOpen={settingsOpen}
           />
         </div>
-        <div className="w-[380px] flex-shrink-0 border-l border-gray-200">
+        <div
+          onMouseDown={handleResizeStart}
+          className="w-2 cursor-col-resize bg-transparent hover:bg-gray-200 transition-colors"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Resize sidebar"
+        />
+        <div
+          className="flex-shrink-0 border-l border-gray-200 min-w-0"
+          style={{ width: `${sidebarWidth}px` }}
+        >
           <Sidebar
             searchGroups={searchGroups}
             boardEntries={boardEntries}
             activeTab={activeTab}
-            onTabChange={setActiveTab}
+            onTabChange={handleTabChange}
             highlightStep={highlightStep}
+            highlightBoardId={highlightBoardId}
           />
         </div>
       </div>

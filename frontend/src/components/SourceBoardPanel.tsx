@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { BoardEntry } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -14,13 +14,34 @@ const SENTIMENT_BADGE: Record<string, { label: string; cls: string }> = {
 
 interface SourceBoardPanelProps {
   entries: BoardEntry[];
+  highlightBoardId: number | null;
 }
 
-function BoardEntryCard({ entry }: { entry: BoardEntry }) {
+function BoardEntryCard({
+  entry,
+  highlighted,
+}: {
+  entry: BoardEntry;
+  highlighted: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isExpanded = expanded || highlighted;
+
+  useEffect(() => {
+    if (highlighted && ref.current) {
+      ref.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [highlighted]);
 
   return (
-    <div className="border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors">
+    <div
+      ref={ref}
+      className={cn(
+        "border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors",
+        highlighted && "border-purple-300 bg-purple-50/50"
+      )}
+    >
       <div
         className="cursor-pointer"
         onClick={() => setExpanded(!expanded)}
@@ -37,7 +58,7 @@ function BoardEntryCard({ entry }: { entry: BoardEntry }) {
           <svg
             className={cn(
               "w-4 h-4 text-gray-400 transition-transform flex-shrink-0",
-              expanded && "rotate-180"
+              isExpanded && "rotate-180"
             )}
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
@@ -46,8 +67,9 @@ function BoardEntryCard({ entry }: { entry: BoardEntry }) {
         </div>
       </div>
 
-      {expanded && (
+      {isExpanded && (
         <div className="mt-2 space-y-2">
+          <p className="text-sm text-gray-900 break-words">{entry.source.title}</p>
           <a
             href={entry.source.url}
             target="_blank"
@@ -79,7 +101,10 @@ function BoardEntryCard({ entry }: { entry: BoardEntry }) {
   );
 }
 
-export default function SourceBoardPanel({ entries }: SourceBoardPanelProps) {
+export default function SourceBoardPanel({
+  entries,
+  highlightBoardId,
+}: SourceBoardPanelProps) {
   if (entries.length === 0) {
     return (
       <div className="p-4 text-center text-sm text-gray-400">
@@ -91,7 +116,11 @@ export default function SourceBoardPanel({ entries }: SourceBoardPanelProps) {
   return (
     <div className="p-3 space-y-2">
       {entries.map((entry) => (
-        <BoardEntryCard key={entry.id} entry={entry} />
+        <BoardEntryCard
+          key={entry.id}
+          entry={entry}
+          highlighted={highlightBoardId === entry.id}
+        />
       ))}
     </div>
   );
